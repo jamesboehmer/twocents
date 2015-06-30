@@ -182,7 +182,7 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	in weight-descending order, and we only need to slice the array
 	 */
 	finalSuggestionSetPosition := 0
-	for finalSuggestionSetPosition < limit {
+	for finalSuggestionSetPosition < limit && collatedSuggestionSet.Size() < limit {
 		for _, suggestionSetItem := range trieItems {
 			if suggestionSetItem.Size() > finalSuggestionSetPosition {
 				thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition]
