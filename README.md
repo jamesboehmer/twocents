@@ -90,3 +90,17 @@ The response contains only the first 6 entries:
 }
 ```
 
+Using the filter parameter:
+```
+curl http://localhost:8080/twocents/v1/default/foo/1000/fight
+```
+
+The response contains only the first 6 entries:
+```
+{
+  "suggestions": [
+    "Foo Fighters"
+  ]
+}
+```
+

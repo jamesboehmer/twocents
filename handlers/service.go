@@ -137,7 +137,11 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 		limit, _ = strconv.Atoi(limitParam)
 	}
 
-	//TODO: use filter from mux vars
+	//case-insensitive filter
+	filter := vars["filter"]
+	if filter != "" {
+		filter = strings.ToLower(filter)
+	}
 
 	dictionaryTrie, found := DictionaryMap[dictionaryName]
 	if !found {
@@ -185,14 +189,24 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	for finalSuggestionSetPosition < limit && collatedSuggestionSet.Size() < limit {
 		for _, suggestionSetItem := range trieItems {
 			if suggestionSetItem.Size() > finalSuggestionSetPosition {
-				thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition]
-				//TODO: use filter parameter
-				collatedSuggestionSet.Add(thisItem)
+				thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition].(*models.SuggestItem)
+				//case-insensitive filter
+				if filter != "" {
+					if strings.Contains(strings.ToLower(thisItem.Term), filter) {
+						collatedSuggestionSet.Add(thisItem)
+					}
+				} else {
+					collatedSuggestionSet.Add(thisItem)
+				}
+
 			}
 		}
 		finalSuggestionSetPosition++
 	}
 
+	if len(collatedSuggestionSet.Values()) < limit {
+		limit = len(collatedSuggestionSet.Values())
+	}
 	suggestions := []string{}
 	for _, suggestion := range collatedSuggestionSet.Values()[0:limit] {
 		suggestions = append(suggestions, suggestion.(*models.SuggestItem).Term)
