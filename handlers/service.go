@@ -2,6 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"os"
+	"io/ioutil"
+	"strconv"
+	"encoding/csv"
 	"github.com/gorilla/mux"
 	"encoding/json"
 	"github.com/tchap/go-patricia/patricia"
@@ -9,6 +13,7 @@ import (
 	"github.com/jamesboehmer/twocents/models"
 	"strings"
 	"log"
+	"fmt"
 )
 
 // This maps dictionary names to prefix tries.  All threads can read this,
@@ -16,24 +21,54 @@ import (
 // atomically swapping
 var DictionaryMap = make(map[string]*patricia.Trie)
 
+var DataDirectory = "."
+
 func ImportDictionaries() map[string][]*models.SuggestItem {
 	var itemMap = make(map[string][]*models.SuggestItem)
 
-	//TODO: import dictionaries from files or database
-	var suggestItem = new(models.SuggestItem)
-	suggestItem.Term = "Foo Bar"
-	suggestItem.Weight = 100
+	fileInfo, err := ioutil.ReadDir(DataDirectory)
+	if err != nil {
+		 log.Print(err)
+		 return itemMap
+	}
+	numberOfDictionaries := 0
+	for _, file := range fileInfo {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".txt") {
+			dictionaryFile := fmt.Sprintf("%s%s%s", DataDirectory, string(os.PathSeparator), file.Name())
+			dictionaryName := strings.TrimSuffix(file.Name(), ".txt")
+			log.Printf("Importing dictionary %s from file %s",dictionaryName, dictionaryFile)
 
-	var suggestItem2 = new(models.SuggestItem)
-	suggestItem2.Term = "Foobar"
-	suggestItem2.Weight = 101
+			csvfile, err := os.Open(dictionaryFile)
+			if err != nil {
+				 log.Print(err)
+				 continue
+			}
+			defer csvfile.Close()
+			reader := csv.NewReader(csvfile)
+			reader.FieldsPerRecord = 2
+			reader.Comma = '|'
 
-	var suggestItem3 = new(models.SuggestItem)
-	suggestItem3.Term = "Foø Bar Baz"
-	suggestItem3.Weight = 99
+			rawCSVdata, err := reader.ReadAll()
+			if err != nil {
+				log.Print(err)
+				continue
+			}
 
-	itemMap["default"] = []*models.SuggestItem{suggestItem, suggestItem2, suggestItem3}
+			for _, each := range rawCSVdata {
+				var suggestItem = new(models.SuggestItem)
+				suggestItem.Term = each[0]
+				weight, err := strconv.Atoi(each[1])
+				if err == nil {
+					suggestItem.Weight = weight
+					itemMap[dictionaryName] = append(itemMap[dictionaryName], suggestItem)
+				}
 
+			}
+			numberOfDictionaries++
+		}
+	}
+
+	log.Printf("Imported %d dictionaries", numberOfDictionaries)
 	return itemMap
 }
 
@@ -156,7 +191,7 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	suggestions := []string{}
-	for _, suggestion := range collatedSuggestionSet.Values() {
+	for _, suggestion := range collatedSuggestionSet.Values()[0:limit] {
 		suggestions = append(suggestions, suggestion.(*models.SuggestItem).Term)
 	}
 
