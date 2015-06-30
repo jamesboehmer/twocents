@@ -45,7 +45,7 @@ Snack Foods|363
 
 ## Requesting
 ```
-curl http://localhost:8080/twocents/v1/<dictionaryName>/<prefixQuery>
+curl http://localhost:8080/twocents/v1/<dictionaryName>/<prefixQuery>[/<limit>]
 ```
 
 For example:
@@ -67,6 +67,25 @@ The response contains the phrases with words starting with the query string, in 
     "Food Stamps",
     "International Federation of Association Football",
     "Snack Foods"
+  ]
+}
+```
+
+Using the limit parameter:
+```
+curl http://localhost:8080/twocents/v1/default/foo/6
+```
+
+The response contains only the first 6 entries:
+```
+{
+  "suggestions": [
+    "Football",
+    "Food",
+    "National Football League",
+    "Food and Drug Administration",
+    "Food Contamination and Poisoning",
+    "Football"
   ]
 }
 ```

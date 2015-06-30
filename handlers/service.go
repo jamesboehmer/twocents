@@ -131,8 +131,11 @@ type TwoCentsV1 struct {
 func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	dictionaryName := vars["dictionary"]
-	//TODO: parse int from mux vars
 	limit := 10
+	limitParam := vars["limit"]
+	if limitParam != "" {
+		limit, _ = strconv.Atoi(limitParam)
+	}
 
 	//TODO: use filter from mux vars
 
