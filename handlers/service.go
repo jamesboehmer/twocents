@@ -95,6 +95,7 @@ func LoadDictionaries() {
 			numSuggestions++
 			//Tokenize the suggested term by whitespace.  Each token will become a prefix in the trie
 			var tokens = strings.Fields(suggestItem.Term)
+			tokens = append(tokens, suggestItem.Term)
 			for _, token := range tokens {
 				numPrefixes++
 				//TODO: use ascii folding
