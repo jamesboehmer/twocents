@@ -4,7 +4,7 @@ A stand-alone in-memory weighted prefix autosuggest/autocomplete service
 # Usage
 ## Running 
 ```
-twocents [-d pathToDataFiles] [-p port]
+twocents [-d pathToDataFiles] [-p port] [-a admin port] [-c cors-origin]
 ```
 
 The optional pathToDataFiles is the name of a directory containing pipe-delimited txt files of the format
@@ -109,17 +109,4 @@ Reloading the data dictionaries:
 curl http://localhost:8081/twocents/admin/reload
 ```
 
-The response contains only the first 6 entries:
-```
-{
-  "suggestions": [
-    "Football",
-    "Food",
-    "National Football League",
-    "Food and Drug Administration",
-    "Food Contamination and Poisoning",
-    "Football"
-  ]
-}
-```
-
+THe response will either indicate that a reload has been initiated, or is already under way

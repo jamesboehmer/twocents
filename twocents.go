@@ -20,6 +20,7 @@ func main() {
 	dataDirectory := flag.String("d", defaultDataDirectory, "Directory where dictionary files are located")
 	serviceListenPort := flag.Int("p", defaultServiceListenPort, "Service Listen Port")
 	adminListenPort := flag.Int("a", defaultAdminListenPort, "Admin Listen Port")
+	allowedOrigin := flag.String("c", handlers.AllowedOrigin, "CORS Allowed Origin")
 	flag.Parse()
 
 	log.Printf("Using data directory %s", *dataDirectory)
@@ -36,6 +37,10 @@ func main() {
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serviceListenPort), nil))
 	}()
 	log.Printf("Admin listening on port %d", *adminListenPort)
+	if *allowedOrigin != "" {
+		log.Printf("Setting CORS Origin to %s", *allowedOrigin)
+		handlers.AllowedOrigin = *allowedOrigin
+	}
 
 	//TODO: Find a better way to pass a different router to the admin server
 	http.ListenAndServe(fmt.Sprintf(":%d", *adminListenPort), &adminHandler{})

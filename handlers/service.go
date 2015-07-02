@@ -22,6 +22,7 @@ import (
 var DictionaryMap = make(map[string]*patricia.Trie)
 
 var DataDirectory = "."
+var AllowedOrigin = ""
 
 func ImportDictionaries() map[string][]*models.SuggestItem {
 	var itemMap = make(map[string][]*models.SuggestItem)
@@ -219,6 +220,9 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 
 	j, _ := json.Marshal(t)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if AllowedOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", AllowedOrigin)
+	}
 	w.Write(j)
 
 }
