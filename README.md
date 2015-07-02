@@ -104,3 +104,22 @@ The response contains only the first 6 entries:
 }
 ```
 
+Reloading the data dictionaries:
+```
+curl http://localhost:8081/twocents/admin/reload
+```
+
+The response contains only the first 6 entries:
+```
+{
+  "suggestions": [
+    "Football",
+    "Food",
+    "National Football League",
+    "Food and Drug Administration",
+    "Food Contamination and Poisoning",
+    "Football"
+  ]
+}
+```
+
