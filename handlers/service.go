@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"io/ioutil"
+	"compress/gzip"
 	"strconv"
 	"encoding/csv"
 	"github.com/gorilla/mux"
@@ -34,22 +35,37 @@ func ImportDictionaries() map[string][]*models.SuggestItem {
 	}
 	numberOfDictionaries := 0
 	for _, file := range fileInfo {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".txt") {
+		if !file.IsDir() && (strings.HasSuffix(file.Name(), ".txt") || strings.HasSuffix(file.Name(), ".txt.gz")) {
 			dictionaryFile := fmt.Sprintf("%s%s%s", DataDirectory, string(os.PathSeparator), file.Name())
-			dictionaryName := strings.TrimSuffix(file.Name(), ".txt")
+			dictionaryName := strings.TrimSuffix(strings.TrimSuffix(file.Name(), ".gz"), ".txt")
 			log.Printf("Importing dictionary %s from file %s",dictionaryName, dictionaryFile)
 
-			csvfile, err := os.Open(dictionaryFile)
+			csvFile, err := os.Open(dictionaryFile)
 			if err != nil {
 				 log.Print(err)
 				 continue
 			}
-			defer csvfile.Close()
-			reader := csv.NewReader(csvfile)
-			reader.FieldsPerRecord = 2
-			reader.Comma = '|'
+			defer csvFile.Close()
+			var csvReader *csv.Reader
+			if strings.HasSuffix(file.Name(), ".txt.gz") {
+				gzipReader, gzerr := gzip.NewReader(csvFile)
+				if gzerr == nil {
+					defer gzipReader.Close()
+					csvReader = csv.NewReader(gzipReader)
+				} else {
+					log.Print(gzerr)
+					continue
+				}
+			} else {
+				csvReader = csv.NewReader(csvFile)
+			}
 
-			rawCSVdata, err := reader.ReadAll()
+			csvReader.FieldsPerRecord = 2
+			csvReader.Comma = '|'
+			csvReader.LazyQuotes = true
+			csvReader.TrimLeadingSpace = true
+
+			rawCSVdata, err := csvReader.ReadAll()
 			if err != nil {
 				log.Print(err)
 				continue
