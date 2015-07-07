@@ -1,17 +1,17 @@
 package main
 
 import (
-	"net/http"
-	"github.com/gorilla/mux"
-	"log"
-	"fmt"
-	"github.com/jamesboehmer/twocents/handlers"
 	"flag"
-	"sync/atomic"
+	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/jamesboehmer/twocents/handlers"
+	"log"
+	"net/http"
 	"strings"
+	"sync/atomic"
 )
 
-var defaultDataDirectory = "."
+var defaultDataDirectory = "./data"
 var defaultServiceListenPort = 8080
 var defaultAdminListenPort = 8081
 var reloadLock uint32 = 0

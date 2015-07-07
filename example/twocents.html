@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Twocents autosuggest example usage</title>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script>
+  var dictionary = '';
+  var limit = 10;
+  $(function() {
+    $( "#twocents" ).autocomplete({
+      delay: 0,
+      source: function(request, response) {
+      	$.ajax("http://localhost:8080/twocents/v1/" + dictionary +"/" + request.term + '/' + limit).done(function(data){
+      		suggestions = [];
+      		data.suggestions.forEach(function(f){
+      			suggestions.push({label: f, value: f})
+      		})
+      		$('#count').text(suggestions.length + ' results');
+      		response(suggestions);
+      	})
+      },
+      minLength: 2
+  	});
+  });
+  </script>
+</head>
+<body>
+
+<div class="ui-widget">
+  <label for="twocents">Dictionary: </label>
+  <select id="twocentsDictionaryPicker"><option>Choose a dictionary</option></select>
+</div>
+<br>
+
+<div class="ui-widget">
+  <label for="twocents">Limit: </label>
+  <input id="twocentsLimit" value="10">
+</div>
+<br>
+
+<div class="ui-widget">
+  <label for="twocents">Lookup: </label>
+  <input id="twocents"> <span id="count">0 results</span>
+</div>
+  
+<script type="text/javascript">
+  // Get the dictionary list from the API meta data
+  $.ajax("http://localhost:8080/twocents/v1").done(function(data){
+    var select = $("#twocentsDictionaryPicker");
+    data.dictionaries.sort();
+    data.dictionaries.forEach(function(f){
+      var opt = document.createElement("option");  
+      opt.textContent = f;
+      opt.value = f;
+      select.append(opt);
+    });
+    $('#twocentsDictionaryPicker option')[1].selected = true;
+    dictionary = $("#twocentsDictionaryPicker")[0].value;
+    select.change(function(event){
+      dictionary = $("#twocentsDictionaryPicker")[0].value;
+    });
+  });
+
+  var limitInput = $("#twocentsLimit");
+    limitInput.change(function(event){
+      limit = $("#twocentsLimit")[0].value;
+    });
+
+ 
+</script> 
+</body>
+</html>

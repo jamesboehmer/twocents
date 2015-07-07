@@ -109,4 +109,8 @@ Reloading the data dictionaries:
 curl http://localhost:8081/twocents/admin/reload
 ```
 
-THe response will either indicate that a reload has been initiated, or is already under way
+The response will either indicate that a reload has been initiated, or is already under way
+
+## Sample data
+
+Sample dictionary "census" comes from the US Census website at http://www.census.gov/popest/data/cities/totals/2014/files/SUB-EST2014_ALL.csv

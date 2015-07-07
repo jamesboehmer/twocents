@@ -1,20 +1,20 @@
 package handlers
 
 import (
+	"compress/gzip"
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/gorilla/mux"
+	"github.com/jamesboehmer/twocents/models"
+	"github.com/tchap/go-patricia/patricia"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-	"io/ioutil"
-	"compress/gzip"
 	"strconv"
-	"encoding/csv"
-	"github.com/gorilla/mux"
-	"encoding/json"
-	"github.com/tchap/go-patricia/patricia"
-	"github.com/emirpasic/gods/sets/treeset"
-	"github.com/jamesboehmer/twocents/models"
 	"strings"
-	"log"
-	"fmt"
 )
 
 // This maps dictionary names to prefix tries.  All threads can read this,
@@ -22,28 +22,28 @@ import (
 // atomically swapping
 var DictionaryMap = make(map[string]*patricia.Trie)
 
-var DataDirectory = "."
-var AllowedOrigin = ""
+var DataDirectory = "./data"
+var AllowedOrigin = "*"
 
 func ImportDictionaries() map[string][]*models.SuggestItem {
 	var itemMap = make(map[string][]*models.SuggestItem)
 
 	fileInfo, err := ioutil.ReadDir(DataDirectory)
 	if err != nil {
-		 log.Print(err)
-		 return itemMap
+		log.Print(err)
+		return itemMap
 	}
 	numberOfDictionaries := 0
 	for _, file := range fileInfo {
 		if !file.IsDir() && (strings.HasSuffix(file.Name(), ".txt") || strings.HasSuffix(file.Name(), ".txt.gz")) {
 			dictionaryFile := fmt.Sprintf("%s%s%s", DataDirectory, string(os.PathSeparator), file.Name())
 			dictionaryName := strings.TrimSuffix(strings.TrimSuffix(file.Name(), ".gz"), ".txt")
-			log.Printf("Importing dictionary %s from file %s",dictionaryName, dictionaryFile)
+			log.Printf("Importing dictionary %s from file %s", dictionaryName, dictionaryFile)
 
 			csvFile, err := os.Open(dictionaryFile)
 			if err != nil {
-				 log.Print(err)
-				 continue
+				log.Print(err)
+				continue
 			}
 			defer csvFile.Close()
 			var csvReader *csv.Reader
@@ -128,7 +128,7 @@ func LoadDictionaries() {
 					// Otherwise create a new set, add the SuggestItem, and insert it into
 					// the trie using the lowercase token for the prefix
 					suggestItemSet := treeset.NewWith(models.SuggestItemComparator)
-//					log.Printf("Inserting suggestion item %s (%s)", lowerToken, suggestItem.Term)
+					//					log.Printf("Inserting suggestion item %s (%s)", lowerToken, suggestItem.Term)
 					suggestItemSet.Add(suggestItem)
 					trie.Insert(patricia.Prefix([]byte(lowerToken)), *suggestItemSet)
 				}
@@ -143,7 +143,7 @@ func LoadDictionaries() {
 }
 
 type TwoCentsV1 struct {
-	Suggestions []string    `json:"suggestions"`
+	Suggestions []string `json:"suggestions"`
 }
 
 func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
@@ -170,10 +170,10 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	query := vars["query"]
 
 	/*
-	The values in the patricia-trie are sets of SuggestItems.  patricia-trie won't return the list of nodes
-	for you, but will invoke a function on all visited nodes.  This []treeset.Set will hold the results of the
-	visited nodes.  visitorFunc will actually add those sets to that array.
-	 */
+		The values in the patricia-trie are sets of SuggestItems.  patricia-trie won't return the list of nodes
+		for you, but will invoke a function on all visited nodes.  This []treeset.Set will hold the results of the
+		visited nodes.  visitorFunc will actually add those sets to that array.
+	*/
 	trieItems := []treeset.Set{}
 	visitorFunc := func(prefix patricia.Prefix, item patricia.Item) error {
 		trieItems = append(trieItems, item.(treeset.Set))
@@ -182,10 +182,10 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	dictionaryTrie.VisitSubtree(patricia.Prefix([]byte(strings.ToLower(query))), visitorFunc)
 
 	/*
-	This set will hold the SuggestItems we pull from the front of every set retrieve from the patricia-trie.  Since
-	it's tree set, the items are sorted using the SuggestItemComparator, which compares by weight and string,
-	guaranteeing the items within a set are ordered
-	 */
+		This set will hold the SuggestItems we pull from the front of every set retrieve from the patricia-trie.  Since
+		it's tree set, the items are sorted using the SuggestItemComparator, which compares by weight and string,
+		guaranteeing the items within a set are ordered
+	*/
 	collatedSuggestionSet := treeset.NewWith(models.SuggestItemComparator)
 
 	//If there were fewer suggestions than the requested limit, lower the limit
@@ -198,11 +198,11 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*
-	The results from the patrica-trie visit are all sorted sets.  However, they're only sorted within the set.  Since
-	we know that they're in weight-descending order, we can reliably pick the first element from each set, and insert
-	them into another sorted result set.  After <limit> iterations, we're guaranteed to have the top weighted items
-	in weight-descending order, and we only need to slice the array
-	 */
+		The results from the patrica-trie visit are all sorted sets.  However, they're only sorted within the set.  Since
+		we know that they're in weight-descending order, we can reliably pick the first element from each set, and insert
+		them into another sorted result set.  After <limit> iterations, we're guaranteed to have the top weighted items
+		in weight-descending order, and we only need to slice the array
+	*/
 	finalSuggestionSetPosition := 0
 	for finalSuggestionSetPosition < limit && collatedSuggestionSet.Size() < limit {
 		for _, suggestionSetItem := range trieItems {
