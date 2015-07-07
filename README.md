@@ -2,6 +2,14 @@
 A stand-alone in-memory weighted prefix autosuggest/autocomplete service
 
 # Usage
+
+## Quickstart
+
+```
+go get && go run twocents.go;
+```
+The service comes with a default dictionary named census.  Open example/twocents.html in your browser to see it in action.
+
 ## Running 
 ```
 twocents [-d pathToDataFiles] [-p port] [-a admin port] [-c cors-origin]
