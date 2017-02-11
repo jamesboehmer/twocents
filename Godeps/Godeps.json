@@ -1,0 +1,47 @@
+{
+	"ImportPath": "github.com/jamesboehmer/twocents",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/emirpasic/gods/containers",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/emirpasic/gods/sets",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/emirpasic/gods/sets/treeset",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/emirpasic/gods/trees",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/emirpasic/gods/trees/redblacktree",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/emirpasic/gods/utils",
+			"Comment": "v1.6.0-2-gfc3e4a4",
+			"Rev": "fc3e4a43ff31b0accc20d750d64ea4b45ee61a5e"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.3.0",
+			"Rev": "392c28fe23e1c45ddba891b0320b3b5df220beea"
+		},
+		{
+			"ImportPath": "github.com/tchap/go-patricia/patricia",
+			"Comment": "v2.2.6",
+			"Rev": "666120de432aea38ab06bd5c818f04f4129882c9"
+		}
+	]
+}
