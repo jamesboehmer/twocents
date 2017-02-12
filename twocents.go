@@ -21,7 +21,9 @@ func main() {
 	serviceListenPort := flag.Int("p", defaultServiceListenPort, "Service Listen Port")
 	adminListenPort := flag.Int("a", defaultAdminListenPort, "Admin Listen Port")
 	allowedOrigin := flag.String("c", handlers.AllowedOrigin, "CORS Allowed Origin")
+	useQuicksort := flag.Bool("q", false, "Use Quicksort (default is InsertionSort")
 	flag.Parse()
+	handlers.UseQuicksort = *useQuicksort
 
 	log.Printf("Using data directory %s", *dataDirectory)
 	handlers.DataDirectory = *dataDirectory

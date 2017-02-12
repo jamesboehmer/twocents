@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -24,6 +25,7 @@ var DictionaryMap = make(map[string]*patricia.Trie)
 
 var DataDirectory = "./data"
 var AllowedOrigin = "*"
+var UseQuicksort = false
 
 func ImportDictionaries() map[string][]*models.SuggestItem {
 	var itemMap = make(map[string][]*models.SuggestItem)
@@ -187,6 +189,7 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 		guaranteeing the items within a set are ordered
 	*/
 	collatedSuggestionSet := treeset.NewWith(models.SuggestItemComparator)
+	suggestionsList := []models.SuggestItem{}
 
 	//If there were fewer suggestions than the requested limit, lower the limit
 	totalSuggestions := 0
@@ -197,37 +200,74 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 		limit = totalSuggestions
 	}
 
-	/*
-		The results from the patrica-trie visit are all sorted sets.  However, they're only sorted within the set.  Since
-		we know that they're in weight-descending order, we can reliably pick the first element from each set, and insert
-		them into another sorted result set.  After <limit> iterations, we're guaranteed to have the top weighted items
-		in weight-descending order, and we only need to slice the array
-	*/
-	finalSuggestionSetPosition := 0
-	for finalSuggestionSetPosition < limit && collatedSuggestionSet.Size() < limit {
-		for _, suggestionSetItem := range trieItems {
-			if suggestionSetItem.Size() > finalSuggestionSetPosition {
-				thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition].(*models.SuggestItem)
-				//case-insensitive filter
-				if filter != "" {
-					if strings.Contains(strings.ToLower(thisItem.Term), filter) {
-						collatedSuggestionSet.Add(thisItem)
+	if UseQuicksort {
+		finalSuggestionSetPosition := 0
+		for finalSuggestionSetPosition < limit && len(suggestionsList) < limit {
+			for _, suggestionSetItem := range trieItems {
+				if suggestionSetItem.Size() > finalSuggestionSetPosition {
+					thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition].(*models.SuggestItem)
+					//case-insensitive filter
+					if filter != "" {
+						if strings.Contains(strings.ToLower(thisItem.Term), filter) {
+							suggestionsList = append(suggestionsList, *thisItem)
+						}
+					} else {
+						suggestionsList = append(suggestionsList, *thisItem)
 					}
-				} else {
-					collatedSuggestionSet.Add(thisItem)
 				}
 
 			}
+			finalSuggestionSetPosition++
 		}
-		finalSuggestionSetPosition++
+		if len(suggestionsList) < limit {
+			limit = len(suggestionsList)
+		}
+		// Sort the list
+		sort.Sort(models.SuggestItemSort(suggestionsList))
+
+	} else {
+		/*
+			The results from the patrica-trie visit are all sorted sets.  However, they're only sorted within the set.  Since
+			we know that they're in weight-descending order, we can reliably pick the first element from each set, and insert
+			them into another sorted result set.  After <limit> iterations, we're guaranteed to have the top weighted items
+			in weight-descending order, and we only need to slice the array
+		*/
+		finalSuggestionSetPosition := 0
+		for finalSuggestionSetPosition < limit && collatedSuggestionSet.Size() < limit {
+			for _, suggestionSetItem := range trieItems {
+				if suggestionSetItem.Size() > finalSuggestionSetPosition {
+					thisItem := suggestionSetItem.Values()[finalSuggestionSetPosition].(*models.SuggestItem)
+					//case-insensitive filter
+					if filter != "" {
+						if strings.Contains(strings.ToLower(thisItem.Term), filter) {
+							collatedSuggestionSet.Add(thisItem)
+						}
+					} else {
+						collatedSuggestionSet.Add(thisItem)
+					}
+
+				}
+			}
+			finalSuggestionSetPosition++
+		}
+
+		if len(collatedSuggestionSet.Values()) < limit {
+			limit = len(collatedSuggestionSet.Values())
+		}
+
 	}
 
-	if len(collatedSuggestionSet.Values()) < limit {
-		limit = len(collatedSuggestionSet.Values())
-	}
 	suggestions := []string{}
-	for _, suggestion := range collatedSuggestionSet.Values()[0:limit] {
-		suggestions = append(suggestions, suggestion.(*models.SuggestItem).Term)
+
+	if UseQuicksort {
+		for _, suggestion := range suggestionsList[0:limit] {
+			suggestions = append(suggestions, suggestion.Term)
+		}
+
+	} else {
+		for _, suggestion := range collatedSuggestionSet.Values()[0:limit] {
+			suggestions = append(suggestions, suggestion.(*models.SuggestItem).Term)
+		}
 	}
 
 	t := TwoCentsV1{
@@ -240,5 +280,4 @@ func TwoCentsHandlerV1(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", AllowedOrigin)
 	}
 	w.Write(j)
-
 }
